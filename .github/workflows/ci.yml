@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: arc-runner-canicas
+    runs-on: arc-runner-canicas-backend
     permissions:
       packages: write
     steps:
