@@ -1,18 +1,27 @@
 const http = require('http');
 const tasks = require('./src/handlers/tasks');
+const { verifyToken } = require('./src/utils/auth');
 
 const PORT = process.env.PORT || 3001;
 
 const router = async (req, res) => {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  // Handle preflight
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
     res.end();
+    return;
+  }
+
+  // Verify Firebase JWT
+  let userId;
+  try {
+    userId = await verifyToken(req);
+  } catch (e) {
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
     return;
   }
 
@@ -34,10 +43,8 @@ const router = async (req, res) => {
   const event = {
     body,
     requestContext: {
-      http: {
-        method,
-        path
-      }
+      http: { method, path },
+      authorizer: { lambda: { userId } }
     },
     pathParameters: pathParts.length > 1 ? { id: pathParts[1] } : {},
     httpMethod: method,
